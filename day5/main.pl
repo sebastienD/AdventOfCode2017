@@ -5,23 +5,37 @@ my $file = 'input.txt';
 open my $info, $file or die "Could not open $file: $!";
 
 my @lines = ();
+
 while( my $line = <$info>)  {   
-    print $line;
-    push(@lines, $line)
-    #last if $. == 2;
+    push(@lines, $line);
 }
 
 close $info;
 
-my $currenti = 0;
+#@lines = (0,3,0,1,-3);
+
+my $i = 0;
 my $steps = 0;
 
-while ($currenti < @lines) {
-    my $v = $lines[$currenti];
-    my $lasti = $currenti;
-    $currenti = $v + $currenti;
-    $lines[$lasti]++;
+my $loop = 0;
+
+my $size = @lines;
+
+while (($i < @lines) && ($i >= 0)) {
+    my $offset = $lines[$i];
+    my $lasti = $i;
+    $i += $offset;
+
+    if ($offset >= 3) {
+        $lines[$lasti]--;
+    } else {
+        $lines[$lasti]++;
+    }
+
+    #print "$lines[$lasti] index $i \n";
     $steps++;
+    $loop++;
+    last if ($loop > 30000000);
 }
 
 print "Steps $steps\n";
