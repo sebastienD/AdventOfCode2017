@@ -39,7 +39,7 @@ func main() {
 	input := read()
 	moves := addMove([][]int{}, input)
 	counter := 0
-
+	firstIndex := 0
 Loop:
 	for {
 		index, value := 0, 0
@@ -55,15 +55,16 @@ Loop:
 			input[index]++
 		}
 		counter++
-		for _, v := range moves {
+		for i, v := range moves {
 			if reflect.DeepEqual(v, input) {
+				firstIndex = i
 				break Loop
 			}
 		}
 		moves = addMove(moves, input)
 	}
 
-	fmt.Printf("counter %v\n", counter)
+	fmt.Printf("counter %v, first %v, delta %v\n", counter, firstIndex, (counter - firstIndex))
 }
 
 func addMove(moves [][]int, move []int) [][]int {
