@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
 )
@@ -16,6 +17,12 @@ type node struct {
 	sum    int
 	dad    *node
 }
+
+type BySum []*node
+
+func (a BySum) Len() int           { return len(a) }
+func (a BySum) Swap(i, j int)      { a[i], a[j] = a[j], a[i] }
+func (a BySum) Less(i, j int) bool { return a[i].sum > a[j].sum }
 
 func newNode(name string, w int, nodes []*node) *node {
 	return &node{
@@ -98,33 +105,25 @@ func main() {
 		last = last.dad
 	}
 
-	print(last)
-	nmin, nmax := last.nodes[0], last.nodes[0]
-	for _, v := range last.nodes {
-		if v.sum < nmin.sum {
-			nmin = v
-		}
-		if v.sum > nmax.sum {
-			nmax = v
-		}
-	}
+	bnode := badNode(last)
+	diff := bnode.dad.nodes[0].sum - bnode.dad.nodes[1].sum
 
 	// uownj
-	fmt.Printf("last : %v\n", last.name)
-	fmt.Printf("min: %v, max: %v, w:%v\n", nmin.sum, nmax.sum, last.weight)
-	fmt.Printf("il faut enlever %v à %v => %v\n", (nmax.sum - nmin.sum), nmax.weight, (nmax.weight - (nmax.sum - nmin.sum)))
-
+	fmt.Printf("root : %v\n", last.name)
+	fmt.Printf("il faut enlever %v à %v => %v\n", diff, bnode.weight, (bnode.weight - diff))
 }
 
-func print(nod *node) {
-	//if len(nod.nodes) > 0 {
-	fmt.Printf("[%v] ", nod.name)
-	for _, v := range nod.nodes {
-		fmt.Printf("n:%v s:%v w:%v ", v.name, v.sum, v.weight)
+func badNode(nod *node) *node {
+	if len(nod.nodes) > 0 {
+		fmt.Printf("[%v %v] ", nod.name, nod.weight)
+		for _, v := range nod.nodes {
+			fmt.Printf("n:%v s:%v - ", v.name, v.sum)
+		}
+		fmt.Println("")
+		sort.Sort(BySum(nod.nodes))
+		if len(nod.nodes) > 1 && nod.nodes[0].sum != nod.nodes[1].sum {
+			return badNode(nod.nodes[0])
+		}
 	}
-	fmt.Println("")
-	//for _, v := range nod.nodes {
-	//	print(v)
-	//}
-	//}
+	return nod
 }
