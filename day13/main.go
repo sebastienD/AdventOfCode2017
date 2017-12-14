@@ -45,7 +45,7 @@ func (l *layer) String() string {
 }
 
 func main() {
-	file, err := os.Open("input-test.txt")
+	file, err := os.Open("input.txt")
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -68,17 +68,23 @@ func main() {
 
 	for myPosition < maxIndex+1 {
 		//fmt.Printf("start\t-> %v, severity: %v, position:%v\n", firewall, severity, myPosition)
-		l := firewall[myPosition]
-		if l != nil && l.isUp() {
-			severity += l.severity()
-			//fmt.Printf("sev added: %v\n", severity)
-		}
-		for _, v := range firewall {
-			v.next()
-		}
+		severity += goForward(myPosition, firewall)
 		myPosition++
 	}
 	//fmt.Printf("%v\n", firewall)
 
 	fmt.Printf("Severity %v\n", severity)
+}
+
+func goForward(position int, firewall map[int]*layer) int {
+	severity := 0
+	l := firewall[position]
+	if l != nil && l.isUp() {
+		severity = l.severity()
+		//fmt.Printf("sev added: %v\n", severity)
+	}
+	for _, v := range firewall {
+		v.next()
+	}
+	return severity
 }
