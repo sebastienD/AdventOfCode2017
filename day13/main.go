@@ -51,9 +51,7 @@ func main() {
 	}
 	defer file.Close()
 
-	myPosition := 0
-	severity := 0
-	maxIndex := 0
+	wait := 0
 
 	firewall := make(map[int]*layer)
 
@@ -63,28 +61,57 @@ func main() {
 		index, _ := strconv.Atoi(words[0])
 		length, _ := strconv.Atoi(strings.Trim(words[1], " "))
 		firewall[index] = &layer{index, length, 1, false}
-		maxIndex = index
 	}
 
-	for myPosition < maxIndex+1 {
-		//fmt.Printf("start\t-> %v, severity: %v, position:%v\n", firewall, severity, myPosition)
-		severity += goForward(myPosition, firewall)
-		myPosition++
+	for !simulation2(wait, firewall) {
+		wait++
 	}
-	//fmt.Printf("%v\n", firewall)
 
-	fmt.Printf("Severity %v\n", severity)
+	fmt.Printf("Wait %v\n", wait)
 }
 
-func goForward(position int, firewall map[int]*layer) int {
-	severity := 0
+func simulation2(wait int, firewall map[int]*layer) bool {
+	//fmt.Printf("simu with wait %v\n", wait)
+	for k, v := range firewall {
+		if (wait+k)%((v.length-1)*2) == 0 {
+			//fmt.Printf("KO wait:%v index:%v l:%v\n", wait, k, v.length)
+			return false
+		}
+	}
+	return true
+}
+
+func simulation(wait int, firewall map[int]*layer) int {
+	//fmt.Printf("simu with wait %v\n", wait)
+	for wait > 0 {
+		for _, v := range firewall {
+			v.next()
+		}
+		wait--
+	}
+	myPosition := 0
+	for goForward(myPosition, firewall) {
+		myPosition++
+	}
+	return myPosition
+}
+
+func goForward(position int, firewall map[int]*layer) bool {
 	l := firewall[position]
 	if l != nil && l.isUp() {
-		severity = l.severity()
-		//fmt.Printf("sev added: %v\n", severity)
+		//fmt.Printf("KO with position %v\n", position)
+		return false
 	}
 	for _, v := range firewall {
 		v.next()
 	}
-	return severity
+	return true
+}
+
+func copyFirewall(firewall map[int]*layer) map[int]*layer {
+	f := make(map[int]*layer)
+	for k, v := range firewall {
+		f[k] = &layer{v.index, v.length, v.position, v.up}
+	}
+	return f
 }
