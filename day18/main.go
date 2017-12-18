@@ -31,7 +31,7 @@ func (r *registers) value(name string) int64 {
 func (r *registers) snd(varVal string) {
 	v := r.value(varVal)
 	if v != 0 {
-		fmt.Printf("set last to %v\n", v)
+		//fmt.Printf("set last to %v\n", v)
 		r.last = v
 	}
 }
@@ -55,7 +55,7 @@ func (r *registers) mod(name string, varVal string) {
 func (r *registers) rcv(varVal string) {
 	v := r.value(varVal)
 	if v != 0 {
-		fmt.Printf("set receive to %v\n", r.last)
+		//fmt.Printf("set receive to %v\n", r.last)
 		r.receive = r.last
 	}
 }
@@ -82,10 +82,18 @@ func main() {
 		//fmt.Printf("tab %v\n", instr)
 	}
 
+	c := make(chan int64)
+	go launch(instr, c)
+
+	result := <- c
+
+	fmt.Printf("Receive is %v\n", result)
+}
+
+func launch(instr []string, c chan int64) {
 	regist := newRegisters()
 	index := 0
 	for regist.receive == 0 {
-		fmt.Printf("loop %v\n", index)
 		line := instr[index]
 		words := strings.Split(line, " ")
 		switch words[0] {
@@ -111,6 +119,5 @@ func main() {
 			index += int(regist.jgz(words[1], words[2]))
 		}
 	}
-
-	fmt.Printf("Receive is %v\n", regist.receive)
+	c <- regist.receive
 }
