@@ -7,17 +7,21 @@ import (
 	"log"
 	"strconv"
 	"fmt"
+	"sync"
+	"time"
 )
 
 
 type registers struct {
 	reg map[string]int64
-	last int64
-	receive int64
+	sent int64
+	id int64
 }
 
-func newRegisters() *registers {
-	return &registers{make(map[string]int64, 0), 0, 0}
+func newRegisters(pValue int64) *registers {
+	r := &registers{make(map[string]int64, 0), 0, pValue}
+	r.reg["p"] = pValue
+	return r
 }
 
 func (r *registers) value(name string) int64 {
@@ -28,12 +32,16 @@ func (r *registers) value(name string) int64 {
 	return r.reg[name]
 }
 
-func (r *registers) snd(varVal string) {
+func (r *registers) snd(varVal string, c chan int64) {
 	v := r.value(varVal)
-	if v != 0 {
+	//if v != 0 {
 		//fmt.Printf("set last to %v\n", v)
-		r.last = v
-	}
+		//r.last = v
+		r.sent++
+		fmt.Printf("[%v] sent %v %v\n", r.id, varVal, v)
+		c <- v
+		//fmt.Printf("[%v] end sent %v %v\n", r.id, varVal, v)
+	//}
 }
 
 func (r *registers) set(name string, varVal string) {
@@ -52,12 +60,16 @@ func (r *registers) mod(name string, varVal string) {
 	r.reg[name] = r.reg[name] % r.value(varVal)
 }
 
-func (r *registers) rcv(varVal string) {
-	v := r.value(varVal)
-	if v != 0 {
-		//fmt.Printf("set receive to %v\n", r.last)
-		r.receive = r.last
+func (r *registers) rcv(name string, c chan int64) bool {
+	fmt.Printf("[%v] wait rcv %v\n", r.id, name)
+	select {
+		case res := <- c:
+			fmt.Printf("[%v] end wait rcv %v %v \n", r.id, name, res)
+			r.reg[name] = res
+		case <-time.After(1 * time.Second):
+			return false
 	}
+	return true
 }
 
 func (r *registers) jgz(x string, y string) int64 {
@@ -69,7 +81,7 @@ func (r *registers) jgz(x string, y string) int64 {
 }
 
 func main() {
-	file, err := os.Open("input.txt")
+	file, err := os.Open("input-test2.txt")
 	if err != nil {
 		log.Fatalf("Open file failed")
 	}
@@ -82,23 +94,35 @@ func main() {
 		//fmt.Printf("tab %v\n", instr)
 	}
 
-	c := make(chan int64)
-	go launch(instr, c)
+	instr1 := make([]string, len(instr))
+	for i,v := range instr {
+		instr1[i] = v
+	}
 
-	result := <- c
+	var wg sync.WaitGroup
+	wg.Add(2)
 
-	fmt.Printf("Receive is %v\n", result)
+	c0 := make(chan int64, 1000)
+	c1 := make(chan int64, 1000)
+
+	go launch(instr, 0, c1, c0, wg)
+	go launch(instr1, 1, c0, c1, wg)
+
+	wg.Wait()
+
+	//fmt.Printf("Nb sent is %v\n", result)
 }
 
-func launch(instr []string, c chan int64) {
-	regist := newRegisters()
+func launch(instr []string, pValue int64, sendChan chan int64, rcvChan chan int64,  wg sync.WaitGroup) {
+	regist := newRegisters(pValue)
 	index := 0
-	for regist.receive == 0 {
+	loop: for {
 		line := instr[index]
 		words := strings.Split(line, " ")
+		fmt.Printf("[%v] Line %v\n", pValue, words)
 		switch words[0] {
 		case "snd":
-			regist.snd(words[1])
+			regist.snd(words[1], sendChan)
 			index ++
 		case "set":
 			regist.set(words[1], words[2])
@@ -113,11 +137,17 @@ func launch(instr []string, c chan int64) {
 			regist.mod(words[1], words[2])
 			index ++
 		case "rcv":
-			regist.rcv(words[1])
+			fmt.Printf("[%v] line recv and sent %v\n", pValue, regist.sent)
+			wg.Done()
+			if !regist.rcv(words[1], rcvChan) {
+				break loop
+			}
+			wg.Add(1)
+			fmt.Printf("[%v] line recv release\n", pValue)
 			index ++
 		case "jgz":
 			index += int(regist.jgz(words[1], words[2]))
 		}
 	}
-	c <- regist.receive
+	fmt.Printf("[%v] Done\n", pValue)
 }
