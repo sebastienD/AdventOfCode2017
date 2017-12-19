@@ -114,6 +114,7 @@ func main() {
 }
 
 func launch(instr []string, pValue int64, sendChan chan int64, rcvChan chan int64,  wg sync.WaitGroup) {
+	defer wg.Done()
 	regist := newRegisters(pValue)
 	index := 0
 	loop: for {
@@ -138,11 +139,9 @@ func launch(instr []string, pValue int64, sendChan chan int64, rcvChan chan int6
 			index ++
 		case "rcv":
 			fmt.Printf("[%v] line recv and sent %v\n", pValue, regist.sent)
-			wg.Done()
 			if !regist.rcv(words[1], rcvChan) {
 				break loop
 			}
-			wg.Add(1)
 			fmt.Printf("[%v] line recv release\n", pValue)
 			index ++
 		case "jgz":
