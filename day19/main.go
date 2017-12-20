@@ -56,84 +56,58 @@ func (c *card) isValid(p point) bool {
 	return re.Match([]byte{c.m[p.y][p.x]})
 }
 
+func (c *card) goDown() bool {
+	if c.isValid(point{c.p.x, c.p.y+1}) {
+		c.p.y++
+		c.d = DOWN
+		c.checkLetter()
+		return true
+	}
+	return false
+}
+
+func (c *card) goUp() bool {
+	if c.isValid(point{c.p.x, c.p.y-1}) {
+		c.p.y--
+		c.d = UP
+		c.checkLetter()
+		return true
+	}
+	return false
+}
+
+func (c *card) goRight() bool {
+	if c.isValid(point{c.p.x+1, c.p.y}) {
+		c.p.x++
+		c.d = RIGHT
+		c.checkLetter()
+		return true
+	}
+	return false
+}
+
+func (c *card) goLeft() bool {
+	if c.isValid(point{c.p.x-1, c.p.y}) {
+		c.p.x--
+		c.d = LEFT
+		c.checkLetter()
+		return true
+	}
+	return false
+}
+
 func (c *card)next() bool {
 	fmt.Println("direction", c.d, string(c.m[c.p.y][c.p.x]))
 	c.steps++
 	switch c.d {
 	case DOWN:
-		if c.isValid(point{c.p.x, c.p.y+1}) {
-			c.p.y++
-			c.checkLetter()
-			return true
-		}
-		if c.isValid(point{c.p.x+1, c.p.y}) {
-			c.p.x++
-			c.d = RIGHT
-			c.checkLetter()
-			return true
-		}
-		if c.isValid(point{c.p.x-1, c.p.y}) {
-			c.p.x--
-			c.d = LEFT
-			c.checkLetter()
-			return true
-		}
+		return c.goDown() || c.goRight() || c.goLeft()
 	case UP:
-		if c.isValid(point{c.p.x, c.p.y-1}) {
-			c.p.y--
-			c.checkLetter()
-			return true
-		}
-		if c.isValid(point{c.p.x+1, c.p.y}) {
-			c.p.x++
-			c.d = RIGHT
-			c.checkLetter()
-			return true
-		}
-		if c.isValid(point{c.p.x-1, c.p.y}) {
-			c.p.x--
-			c.d = LEFT
-			c.checkLetter()
-			return true
-		}
+		return c.goUp() || c.goRight() || c.goLeft()
 	case RIGHT:
-		po := point{c.p.x+1, c.p.y}
-		if c.isValid(po) {
-			c.p.x++
-			c.checkLetter()
-			return true
-		}
-		if c.isValid(point{c.p.x, c.p.y+1}) {
-			c.p.y++
-			c.d = DOWN
-			c.checkLetter()
-			return true
-		}
-		if c.isValid(point{c.p.x, c.p.y-1}) {
-			c.p.y--
-			c.d = UP
-			c.checkLetter()
-			return true
-		}
+		return c.goRight() || c.goUp() || c.goDown()
 	case LEFT:
-		po := point{c.p.x-1, c.p.y}
-		if c.isValid(po) {
-			c.p.x--
-			c.checkLetter()
-			return true
-		}
-		if c.isValid(point{c.p.x, c.p.y+1}) {
-			c.p.y++
-			c.d = DOWN
-			c.checkLetter()
-			return true
-		}
-		if c.isValid(point{c.p.x, c.p.y-1}) {
-			c.p.y--
-			c.d = UP
-			c.checkLetter()
-			return true
-		}
+		return c.goLeft() || c.goUp() || c.goDown()
 	}
 	return false
 }
